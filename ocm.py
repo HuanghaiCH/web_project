@@ -6,6 +6,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+
 def log(sql, agrs=()):
     """打印sql"""
     return logging.INFO('sql:' % sql)
@@ -17,6 +18,7 @@ def create_args_string(num):
         L.append('?')
     return ', '.join(L)
 
+
 '''
 我们需要创建一个全局的连接池，每个HTTP请求都可以从连接池中直接获取数据库连接。使用连接池的好处是不必频繁地打开和关闭数据库连接，而是能复用就尽量复用。
 连接池由全局变量__pool存储，缺省情况下将编码设置为utf8，自动提交事务：
@@ -24,7 +26,7 @@ def create_args_string(num):
 
 
 async def create_pool(loop, **kwargs):
-    logging.INFO("create database connect pool...")
+    print("create database connect pool...")
     global __pool
     __pool = await aiomysql.create_pool(
         host=kwargs.get('host', 'localhost'),
@@ -38,7 +40,6 @@ async def create_pool(loop, **kwargs):
         minsize=kwargs.get('minsize', 1),
         loop=loop
     )
-
 
 
 '''
@@ -87,7 +88,8 @@ class Field(object):
         self.default = default
 
     def __str__(self):
-        return '<%s, %s:%s>' %(self.__class__.__name__, self.column_type, self.name)
+        return '<%s, %s:%s>' % (self.__class__.__name__, self.column_type, self.name)
+
 
 class StringField(Field):
     def __init__(self, name=None, primary_key=False, default=None, ddl='varchar(100)'):
@@ -99,15 +101,18 @@ class BooleanField(Field):
     def __init__(self, name=None, default=False):
         super().__init__(name, 'boolean', False, default)
 
+
 class IntegerField(Field):
 
     def __init__(self, name=None, primary_key=False, default=0):
         super().__init__(name, 'bigint', primary_key, default)
 
+
 class FloatField(Field):
 
     def __init__(self, name=None, primary_key=False, default=0.0):
         super().__init__(name, 'real', primary_key, default)
+
 
 class TextField(Field):
 
@@ -127,8 +132,8 @@ class ModelMetaclass(type):
         if name == 'Model':
             return type.__new__(cls, name, bases, attrs)
         # 获取table名称，取出表名，默认与类的名字相同
-        tableName = attrs.get('__table__', None) or name
-        logging.INFO('found model: %s (table: %s)' % (name, tableName))
+        table_name = attrs.get('__table__', None) or name
+        #logging.INFO('found model: %s (table: %s)' % (name, table_name))
 
         # 获取所有的Field和主键名:
         mappings = dict()
@@ -153,17 +158,17 @@ class ModelMetaclass(type):
         escaped_fields = list(map(lambda f: '`%s`' % f, fields))
 
         attrs['__mappings__'] = mappings  # 保存属性和列的映射关系
-        attrs['__table__'] = tableName
+        attrs['__table__'] = table_name
         attrs['__primary_key__'] = primaryKey  # 主键属性名
         attrs['__fields__'] = fields  # 除主键外的属性名
 
         # 构造默认的SELECT, INSERT, UPDATE和DELETE语句:
-        attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), tableName)
+        attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), table_name)
         attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (
-        tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
+            table_name, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
         attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (
-        tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
-        attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
+            table_name, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
+        attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (table_name, primaryKey)
 
         return type.__new__(cls, name, bases, attrs)
 
@@ -271,5 +276,3 @@ class Model(dict, metaclass=ModelMetaclass):
         rows = await execute(self.__delete__, args)
         if rows != 1:
             logging.warn('failed to remove by primary key: affected rows: %s' % rows)
-
-

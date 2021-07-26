@@ -1,16 +1,15 @@
-from ocm import Model, StringField, IntegerField
+import ocm
+from models import User, Blog, Comment
+import asyncio
 
-class User(Model):
-    __table__ = 'users'
 
-    id = IntegerField(primary_key=True)
-    name = StringField()
+async def run():
+    ocm.create_pool(user='test', password='123qwe!', database='test')
 
-# 创建实例
-user = User(id=123, name='Jimmy')
+    u = User(name='Test', email='test@example.com', passwd='1234567890', image='about:blank')
 
-# 存入数据库
-user.insert()
+    u.save()
 
-# 查询所有User对象
-users = User.findAll()
+
+if __name__ == '__main__':
+    asyncio.run(run())
