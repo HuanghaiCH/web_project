@@ -7,9 +7,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-def log(sql, agrs=()):
+def log(sql, args=()):
     """打印sql"""
-    return logging.INFO('sql:' % sql)
+    logging.info('sql:%s' % sql)
 
 
 def create_args_string(num):
@@ -26,14 +26,14 @@ def create_args_string(num):
 
 
 async def create_pool(loop, **kwargs):
-    print("create database connect pool...")
+    logging.info("create database connect pool...")
     global __pool
     __pool = await aiomysql.create_pool(
         host=kwargs.get('host', 'localhost'),
-        port=kwargs.get('port', 33306),
+        port=kwargs.get('port', 33339),
         user=kwargs['user'],
         password=kwargs['password'],
-        db=kwargs['db'],
+        db=kwargs['database'],
         charset=kwargs.get('charset', 'utf8'),
         autocommit=kwargs.get('autocommit', True),
         maxsize=kwargs.get('maxsize', 10),
@@ -58,7 +58,7 @@ async def select(sql, args, size=None):
         else:
             rs = await cur.fetchall()
         await cur.close()
-        logging.INFO('rows returned:%s' % len(rs))
+        logging.info('rows returned:%s' % len(rs))
         return rs
 
 
@@ -133,7 +133,7 @@ class ModelMetaclass(type):
             return type.__new__(cls, name, bases, attrs)
         # 获取table名称，取出表名，默认与类的名字相同
         table_name = attrs.get('__table__', None) or name
-        #logging.INFO('found model: %s (table: %s)' % (name, table_name))
+        logging.info('found model: (table: %s)' % table_name)
 
         # 获取所有的Field和主键名:
         mappings = dict()
