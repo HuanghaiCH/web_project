@@ -33,7 +33,7 @@ async def create_pool(loop, **kwargs):
         port=kwargs.get('port', 33339),
         user=kwargs['user'],
         password=kwargs['password'],
-        db=kwargs['database'],
+        db=kwargs['db'],
         charset=kwargs.get('charset', 'utf8'),
         autocommit=kwargs.get('autocommit', True),
         maxsize=kwargs.get('maxsize', 10),
