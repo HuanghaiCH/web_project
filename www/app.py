@@ -5,10 +5,13 @@ import logging;
 
 from aiohttp.web_middlewares import middleware
 
+from www.models import User
+
 logging.basicConfig(level=logging.INFO)
 
 import asyncio, os, json, time
 from datetime import datetime
+from coreweb import get
 
 from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
@@ -17,6 +20,11 @@ import ocm
 from coreweb import add_routes, add_static
 
 
+"""
+init_jinja2(app, filters=dict(datetime=datetime_filter))
+jinja2模块中有一个名为Enviroment的类，这个类的实例用于存储配置和全局对象，然后从文件系统或其他位置中加载模板。
+Environment支持两种加载方式：PackageLoader：包加载器 / FileSystemLoader：文件系统加载器
+"""
 def init_jinja2(app, **kw):
     logging.info('init jinja2...')
     options = dict(
@@ -35,6 +43,7 @@ def init_jinja2(app, **kw):
     filters = kw.get('filters', None)
     if filters is not None:
         for name, f in filters.items():
+            # logging.info("name:%s, f:%s" % (name, f))
             env.filters[name] = f
     app['__templating__'] = env
 
@@ -142,7 +151,7 @@ def datetime_filter(t):
 # 老式的写法 @asyncio.coroutine
 #           def init(loop):
 async def init(loop):
-    await ocm.create_pool(loop=loop, host='127.0.0.1', port=13333, user='test', password='123qwe!', db='test')
+    await ocm.create_pool(loop=loop, host='127.0.0.1', port=33339, user='test', password='123qwe!', db='test')
 
     # aiohttp 提供了中间件，通过中间件，可以定制请求处理程序
     # 中间件必须有2个接收参数，一个是request请求实例，一个是处理程序，返回一个相应或者异常报错。
@@ -173,21 +182,21 @@ async def init(loop):
     logging.info('server started at http://127.0.0.1:19000...')
     return srv
 
+if __name__ == '__main__':
+    # 获取当前事件循环。
+    # 如果当前 OS 线程没有设置当前事件循环，该 OS 线程为主线程，并且 set_event_loop() 还没有被调用，则 asyncio 将创建一个新的事件循环并将其设为当前事件循环。
+    # 由于此函数具有相当复杂的行为（特别是在使用了自定义事件循环策略的时候），更推荐在协程和回调中使用 get_running_loop() 函数而非 get_event_loop()。
+    # 应该考虑使用 asyncio.run() 函数而非使用低层级函数来手动创建和关闭事件循环。
+    loop = asyncio.get_event_loop()
 
-# 获取当前事件循环。
-# 如果当前 OS 线程没有设置当前事件循环，该 OS 线程为主线程，并且 set_event_loop() 还没有被调用，则 asyncio 将创建一个新的事件循环并将其设为当前事件循环。
-# 由于此函数具有相当复杂的行为（特别是在使用了自定义事件循环策略的时候），更推荐在协程和回调中使用 get_running_loop() 函数而非 get_event_loop()。
-# 应该考虑使用 asyncio.run() 函数而非使用低层级函数来手动创建和关闭事件循环。
-loop = asyncio.get_event_loop()
+    # 运行直到 future ( Future 的实例 ) 被完成
+    # 如果参数是 coroutine object ，将被隐式调度为 asyncio.Task 来运行。
+    # 返回 Future 的结果 或者引发相关异常。
+    loop.run_until_complete(init(loop))
 
-# 运行直到 future ( Future 的实例 ) 被完成
-# 如果参数是 coroutine object ，将被隐式调度为 asyncio.Task 来运行。
-# 返回 Future 的结果 或者引发相关异常。
-loop.run_until_complete(init(loop))
-
-# 运行事件循环直到 stop() 被调用。
-# 如果 stop() 在调用 run_forever() 之前被调用，循环将轮询一次 I/O 选择器并设置超时为零，再运行所有已加入计划任务的回调来响应 I/O 事件（以及已加入计划任务的事件）
-# ，然后退出。
-# 如果 stop() 在 run_forever() 运行期间被调用，循环将运行当前批次的回调然后退出。 请注意在此情况下由回调加入计划任务的新回调将不会运行；
-# 它们将会在下次 run_forever() 或 run_until_complete() 被调用时运行。
-loop.run_forever()
+    # 运行事件循环直到 stop() 被调用。
+    # 如果 stop() 在调用 run_forever() 之前被调用，循环将轮询一次 I/O 选择器并设置超时为零，再运行所有已加入计划任务的回调来响应 I/O 事件（以及已加入计划任务的事件）
+    # ，然后退出。
+    # 如果 stop() 在 run_forever() 运行期间被调用，循环将运行当前批次的回调然后退出。 请注意在此情况下由回调加入计划任务的新回调将不会运行；
+    # 它们将会在下次 run_forever() 或 run_until_complete() 被调用时运行。
+    loop.run_forever()
