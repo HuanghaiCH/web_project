@@ -114,6 +114,7 @@ class RequestHandler(object):
                 if not request.content_type:
                     return web.HTTPBadRequest('Missing Content-Type.')
                 ct = request.content_type.lower()
+                logging.info('func:%s and content_type:%s ' % (self._func, ct))
                 if ct.startswith('application/json'):
                     params = await request.json()
                     if not isinstance(params, dict):
